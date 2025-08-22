@@ -167,9 +167,6 @@ JsonRequest parseJsonRequest(const std::string& jsonStr) {
     req.animate = true;
     req.snapshotEvery = 1000;
     
-    // Debug: print the raw JSON we received
-    printf("DEBUG: Raw JSON received: %s\n", jsonStr.c_str());
-    
     // Extract capacity
     size_t capPos = jsonStr.find("\"capacity\":");
     if (capPos != std::string::npos) {
@@ -177,7 +174,6 @@ JsonRequest parseJsonRequest(const std::string& jsonStr) {
         size_t end = jsonStr.find_first_not_of("0123456789", start);
         if (end != std::string::npos) {
             req.capacity = std::stoul(jsonStr.substr(start, end - start));
-            printf("DEBUG: Extracted capacity: %zu\n", req.capacity);
         }
     }
     
@@ -185,7 +181,6 @@ JsonRequest parseJsonRequest(const std::string& jsonStr) {
     size_t animPos = jsonStr.find("\"animate\":");
     if (animPos != std::string::npos) {
         req.animate = jsonStr.find("true", animPos) != std::string::npos;
-        printf("DEBUG: Extracted animate: %s\n", req.animate ? "true" : "false");
     }
     
     // Extract snapshotEvery
@@ -195,7 +190,6 @@ JsonRequest parseJsonRequest(const std::string& jsonStr) {
         size_t end = jsonStr.find_first_not_of("0123456789", start);
         if (end != std::string::npos) {
             req.snapshotEvery = std::stoul(jsonStr.substr(start, end - start));
-            printf("DEBUG: Extracted snapshotEvery: %zu\n", req.snapshotEvery);
         }
     }
     
@@ -216,20 +210,15 @@ JsonRequest parseJsonRequest(const std::string& jsonStr) {
                     break;
                 }
             }
-            printf("DEBUG: Extracted %zu policies\n", req.policies.size());
         }
     }
     
     // Extract traceText - completely rewritten approach
     size_t tracePos = jsonStr.find("\"traceText\":");
     if (tracePos != std::string::npos) {
-        printf("DEBUG: Found traceText at position %zu\n", tracePos);
-        
         // Find the opening quote after "traceText":
         size_t start = jsonStr.find("\"", tracePos + 12);
         if (start != std::string::npos) {
-            printf("DEBUG: Opening quote found at position %zu\n", start);
-            
             // Now we need to find the closing quote, but we need to handle escaped quotes
             // For now, let's try a simple approach: find the next unescaped quote
             size_t end = start + 1;
@@ -242,7 +231,6 @@ JsonRequest parseJsonRequest(const std::string& jsonStr) {
                     if (end == 0 || jsonStr[end - 1] != '\\') {
                         // This is an unescaped quote, so it's our end
                         foundEnd = true;
-                        printf("DEBUG: Closing quote found at position %zu\n", end);
                     } else {
                         // This is an escaped quote, continue searching
                         end++;
@@ -254,16 +242,8 @@ JsonRequest parseJsonRequest(const std::string& jsonStr) {
             
             if (foundEnd) {
                 req.traceText = jsonStr.substr(start + 1, end - start - 1);
-                printf("DEBUG: Extracted traceText: '%s'\n", req.traceText.c_str());
-                printf("DEBUG: traceText length: %zu\n", req.traceText.length());
-            } else {
-                printf("DEBUG: ERROR: Could not find closing quote for traceText\n");
             }
-        } else {
-            printf("DEBUG: ERROR: Could not find opening quote after traceText:\n");
         }
-    } else {
-        printf("DEBUG: ERROR: Could not find traceText field\n");
     }
     
     return req;
@@ -274,24 +254,8 @@ const char* run_simulation_json(const char* requestJson) {
         std::string jsonStr(requestJson);
         JsonRequest req = parseJsonRequest(jsonStr);
         
-        // Debug: print what we extracted
-        std::string debugInfo = "Extracted: capacity=" + std::to_string(req.capacity) + 
-                               ", policies=" + std::to_string(req.policies.size()) + 
-                               ", traceText='" + req.traceText + "'";
-        
         // Parse trace
         ParseResult parseResult = TraceParser::parse(req.traceText);
-        
-        // Debug: check what was parsed
-        std::string parseDebug = "Parsed " + std::to_string(parseResult.operations.size()) + " operations";
-        for (size_t i = 0; i < parseResult.operations.size(); ++i) {
-            parseDebug += "\n  " + std::to_string(i) + ": " + 
-                         (parseResult.operations[i].kind == TraceOp::Kind::GET ? "GET" : "PUT") + 
-                         " " + parseResult.operations[i].key;
-            if (parseResult.operations[i].kind == TraceOp::Kind::PUT) {
-                parseDebug += " " + parseResult.operations[i].value;
-            }
-        }
         
         if (!parseResult.success) {
             std::string errorJson = "{\"error\":\"Parse failed\",\"details\":[";
@@ -299,7 +263,7 @@ const char* run_simulation_json(const char* requestJson) {
                 if (i > 0) errorJson += ",";
                 errorJson += "\"" + parseResult.errors[i] + "\"";
             }
-            errorJson += "],\"debug\":\"" + debugInfo + "\",\"parseDebug\":\"" + parseDebug + "\"}";
+            errorJson += "],\"debug\":\"\",\"parseDebug\":\"\"}";
             
             char* result = static_cast<char*>(malloc(errorJson.length() + 1));
             strcpy(result, errorJson.c_str());
@@ -308,7 +272,7 @@ const char* run_simulation_json(const char* requestJson) {
         
         // Debug: check if operations were parsed
         if (parseResult.operations.empty()) {
-            std::string errorJson = "{\"error\":\"No operations parsed from trace\",\"traceText\":\"" + req.traceText + "\",\"debug\":\"" + debugInfo + "\",\"parseDebug\":\"" + parseDebug + "\"}";
+            std::string errorJson = "{\"error\":\"No operations parsed from trace\",\"traceText\":\"" + req.traceText + "\",\"debug\":\"\",\"parseDebug\":\"\"}";
             char* result = static_cast<char*>(malloc(errorJson.length() + 1));
             strcpy(result, errorJson.c_str());
             return result;

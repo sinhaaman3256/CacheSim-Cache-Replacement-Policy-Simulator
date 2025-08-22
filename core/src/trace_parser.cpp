@@ -10,9 +10,6 @@ ParseResult TraceParser::parse(const std::string& traceText) {
     ParseResult result;
     result.success = true;
     
-    printf("DEBUG: TraceParser::parse called with traceText: '%s'\n", traceText.c_str());
-    printf("DEBUG: traceText length: %zu\n", traceText.length());
-    
     // First, replace escaped newlines with actual newlines
     std::string processedText = traceText;
     size_t pos = 0;
@@ -20,8 +17,6 @@ ParseResult TraceParser::parse(const std::string& traceText) {
         processedText.replace(pos, 2, "\n");
         pos += 1; // Move past the newline we just inserted
     }
-    
-    printf("DEBUG: After processing escaped newlines: '%s'\n", processedText.c_str());
     
     // Manual line splitting on actual newlines
     std::vector<std::string> lines;
@@ -44,41 +39,24 @@ ParseResult TraceParser::parse(const std::string& traceText) {
         }
     }
     
-    printf("DEBUG: Split into %zu lines\n", lines.size());
-    
     for (size_t i = 0; i < lines.size(); ++i) {
         const std::string& line = lines[i];
         int lineNumber = i + 1;
         
-        printf("DEBUG: Processing line %d: '%s'\n", lineNumber, line.c_str());
-        
         std::string trimmedLine = trim(line);
-        printf("DEBUG: After trim: '%s'\n", trimmedLine.c_str());
         
         if (isEmpty(trimmedLine) || isComment(trimmedLine)) {
-            printf("DEBUG: Line %d is empty or comment, skipping\n", lineNumber);
             continue;
         }
         
         try {
             TraceOp op = parseLine(trimmedLine, lineNumber);
-            printf("DEBUG: Successfully parsed line %d: %s %s %s\n", 
-                   lineNumber, 
-                   (op.kind == TraceOp::Kind::GET ? "GET" : "PUT"),
-                   op.key.c_str(),
-                   op.value.c_str());
             result.operations.push_back(op);
         } catch (const std::exception& e) {
-            printf("DEBUG: Error parsing line %d: %s\n", lineNumber, e.what());
             result.errors.push_back("Line " + std::to_string(lineNumber) + ": " + e.what());
             result.success = false;
         }
     }
-    
-    printf("DEBUG: Parse completed. Success: %s, Operations: %zu, Errors: %zu\n", 
-           result.success ? "true" : "false", 
-           result.operations.size(), 
-           result.errors.size());
     
     return result;
 }
