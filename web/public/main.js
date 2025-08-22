@@ -1,5 +1,7 @@
-// No WASM import needed - using JavaScript only
-console.log("🚀 CacheSim using JavaScript simulator");
+// CacheSim - Cache Replacement Policy Simulator
+// Uses C++ backend compiled to WebAssembly (WASM) for high-performance cache simulation
+// JavaScript handles UI, WASM handles all the computational logic
+console.log("🚀 CacheSim initializing with WASM backend...");
 
 class CacheSimulator {
     constructor() {
@@ -13,7 +15,7 @@ class CacheSimulator {
         
         this.initializeElements();
         this.bindEvents();
-        this.loadWasm();
+        this.initializeWASM();
         console.log('✅ CacheSimulator initialized');
     }
     
@@ -68,11 +70,11 @@ class CacheSimulator {
         });
     }
     
-    async loadWasm() {
+    async initializeWASM() {
         try {
-            this.elements.runBtn.textContent = 'Initializing...';
+            this.elements.runBtn.textContent = 'Loading WASM...';
             this.elements.runBtn.disabled = true;
-    
+            
             // Wait for WASM module to be ready
             let attempts = 0;
             const maxAttempts = 50; // 5 seconds max
@@ -86,7 +88,7 @@ class CacheSimulator {
                         Object.keys(this.wasmModule).filter(k => k.startsWith('_')));
                     console.log('Runtime methods available:', 
                         Object.keys(this.wasmModule).filter(k => ['stringToUTF8', 'UTF8ToString'].includes(k)));
-                    this.elements.runBtn.textContent = 'Run Simulation (WASM)';
+                    this.elements.runBtn.textContent = 'Run Simulation';
                     this.elements.runBtn.disabled = false;
                     return;
                 }
@@ -95,15 +97,13 @@ class CacheSimulator {
                 attempts++;
             }
             
-            console.log('🚀 WASM module not ready, using JavaScript');
-            this.wasmModule = null;
-            this.elements.runBtn.textContent = 'Run Simulation (JS)';
-            this.elements.runBtn.disabled = false;
+            throw new Error('WASM module failed to load within timeout');
             
         } catch (error) {
-            console.error('Failed to initialize:', error);
-            this.elements.runBtn.textContent = 'Run Simulation';
-            this.elements.runBtn.disabled = false;
+            console.error('Failed to initialize WASM:', error);
+            this.elements.runBtn.textContent = 'WASM Failed';
+            this.elements.runBtn.disabled = true;
+            alert('Failed to load WebAssembly module. Please refresh the page.');
         }
     }
     
@@ -150,95 +150,59 @@ class CacheSimulator {
     
             let result;
             
-            // Try WASM first, fallback to JavaScript
-            if (this.wasmModule) {
-                try {
-                    console.log('🚀 Trying WASM simulation...');
-                    console.log('WASM module functions:', Object.keys(this.wasmModule).filter(k => k.startsWith('_')));
-                    
-                    // Prepare request for WASM
-                    const requestJson = JSON.stringify(request);
-                    console.log('WASM Request JSON:', requestJson);
-                    
-                    // Check if functions exist
-                    if (!this.wasmModule._malloc) {
-                        throw new Error('_malloc function not found');
-                    }
-                    if (!this.wasmModule._run_simulation_json) {
-                        throw new Error('_run_simulation_json function not found');
-                    }
-                    if (!this.wasmModule.stringToUTF8) {
-                        throw new Error('stringToUTF8 function not found');
-                    }
-                    if (!this.wasmModule.UTF8ToString) {
-                        throw new Error('UTF8ToString function not found');
-                    }
-                    
-                    // Allocate memory for the request
-                    const requestPtr = this.wasmModule._malloc(requestJson.length + 1);
-                    console.log('Allocated memory at:', requestPtr);
-                    
-                    this.wasmModule.stringToUTF8(requestJson, requestPtr, requestJson.length + 1);
-                    console.log('String copied to memory');
-                    
-                    // Call the C++ simulation function
-                    console.log('Calling _run_simulation_json...');
-                    const resultPtr = this.wasmModule._run_simulation_json(requestPtr);
-                    console.log('Result pointer:', resultPtr);
-                    
-                    if (resultPtr === 0) {
-                        throw new Error('WASM simulation returned null');
-                    }
-                    
-                    // Get the result string
-                    const resultJson = this.wasmModule.UTF8ToString(resultPtr);
-                    console.log('WASM Raw Result:', resultJson);
-                    
-                    // Parse the result
-                    result = JSON.parse(resultJson);
-                    
-                    // Free memory
-                    this.wasmModule._free(requestPtr);
-                    this.wasmModule._free_json(resultPtr);
-                    
-                    if (result.error) {
-                        throw new Error(result.error);
-                    }
-                    
-                    console.log('✅ WASM simulation successful');
-                    
-                } catch (wasmError) {
-                    console.log('⚠️ WASM failed, falling back to JavaScript:', wasmError.message);
-                    console.error('WASM error details:', wasmError);
-                    // Don't throw, let it fall through to JavaScript
-                    result = null;
-                }
+            // Run WASM simulation
+            console.log('🚀 Running WASM simulation...');
+            console.log('WASM module functions:', Object.keys(this.wasmModule).filter(k => k.startsWith('_')));
+            
+            // Prepare request for WASM
+            const requestJson = JSON.stringify(request);
+            console.log('WASM Request JSON:', requestJson);
+            
+            // Check if functions exist
+            if (!this.wasmModule._malloc) {
+                throw new Error('_malloc function not found');
+            }
+            if (!this.wasmModule._run_simulation_json) {
+                throw new Error('_run_simulation_json function not found');
+            }
+            if (!this.wasmModule.stringToUTF8) {
+                throw new Error('stringToUTF8 function not found');
+            }
+            if (!this.wasmModule.UTF8ToString) {
+                throw new Error('UTF8ToString function not found');
             }
             
-            // If WASM failed or not available, use JavaScript
-            if (!result) {
-                console.log('🚀 Using JavaScript simulation...');
-                try {
-                    const jsSimulator = new JSCacheSimulator();
-                    result = jsSimulator.runSimulation(request);
-                    console.log('✅ JavaScript simulation successful');
-                } catch (jsError) {
-                    console.error('❌ JavaScript simulation failed:', jsError);
-                    throw new Error('JavaScript simulation failed: ' + jsError.message);
-                }
-            }
+            // Allocate memory for the request
+            const requestPtr = this.wasmModule._malloc(requestJson.length + 1);
+            console.log('Allocated memory at:', requestPtr);
             
-            // Ensure we have a result
-            if (!result) {
-                throw new Error('Both WASM and JavaScript simulation failed');
-            }
-    
+            // Copy string to WASM memory
+            this.wasmModule.stringToUTF8(requestJson, requestPtr, requestJson.length + 1);
+            console.log('String copied to memory');
+            
+            // Call WASM function
+            console.log('Calling _run_simulation_json...');
+            const resultPtr = this.wasmModule._run_simulation_json(requestPtr);
+            console.log('Result pointer:', resultPtr);
+            
+            // Get result string
+            const resultStr = this.wasmModule.UTF8ToString(resultPtr);
+            console.log('WASM Raw Result:', resultStr);
+            
+            // Free memory
+            this.wasmModule._free(requestPtr);
+            this.wasmModule._free_json(resultPtr);
+            
+            // Parse result
+            result = JSON.parse(resultStr);
+            console.log('✅ WASM simulation successful');
+            
             this.currentResults = Array.isArray(result) ? result : [result];
             this.currentStep = 0;
-    
+
             this.renderVisualization();
             this.updatePlayerBar();
-    
+
             if (animate) {
                 this.elements.playerBar.style.display = 'flex';
                 this.elements.comparisonSummary.style.display = 'block';
@@ -246,10 +210,11 @@ class CacheSimulator {
                 this.elements.playerBar.style.display = 'none';
                 this.elements.comparisonSummary.style.display = 'block';
             }
-    
+            
         } catch (error) {
             console.error('Simulation failed:', error);
             alert('Simulation failed: ' + error.message);
+            return;
         } finally {
             this.elements.runBtn.textContent = 'Run Simulation';
             this.elements.runBtn.disabled = false;
