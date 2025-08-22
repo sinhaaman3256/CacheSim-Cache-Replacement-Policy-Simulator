@@ -1,0 +1,40 @@
+{
+  "name": "cachesim",
+  "version": "1.0.0",
+  "description": "Cache Replacement Policy Simulator - Visualize and compare LRU, LFU, ARC, and FIFO policies",
+  "main": "web/main.js",
+  "scripts": {
+    "build": "bash build.sh",
+    "build:windows": "build.bat",
+    "serve": "npx serve web",
+    "dev": "npx live-server web --port=8000",
+    "test:native": "make test",
+    "clean": "make clean && rm -rf wasm/*.js wasm/*.wasm"
+  },
+  "keywords": [
+    "cache",
+    "replacement-policy",
+    "lru",
+    "lfu",
+    "arc",
+    "fifo",
+    "webassembly",
+    "wasm",
+    "simulator",
+    "visualization"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0",
+    "live-server": "^1.2.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/cachesim.git"
+  },
+  "homepage": "https://yourusername.github.io/cachesim"
+}

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CacheSim — Cache Replacement Policy Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CacheSim</h1>
+            <p>Cache Replacement Policy Simulator</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="capacity">Cache Capacity:</label>
+                <input type="number" id="capacity" value="3" min="1" max="100">
+            </div>
+
+            <div class="control-group">
+                <label>Policies:</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" value="LRU" checked> LRU</label>
+                    <label><input type="checkbox" value="FIFO"> FIFO</label>
+                    <label><input type="checkbox" value="LFU"> LFU</label>
+                    <label><input type="checkbox" value="ARC"> ARC</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Mode:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="mode" value="animate" checked> Animate</label>
+                    <label><input type="radio" name="mode" value="fast"> Fast</label>
+                </div>
+            </div>
+
+            <div class="control-group" id="snapshot-control" style="display: none;">
+                <label for="snapshotEvery">Snapshot every:</label>
+                <input type="number" id="snapshotEvery" value="1000" min="1">
+            </div>
+
+            <div class="control-group">
+                <label for="traceInput">Trace:</label>
+                <textarea id="traceInput" rows="8" placeholder="Enter cache operations (e.g., PUT A apple, GET A)">PUT A apple
+PUT B banana
+PUT C cherry
+GET A
+PUT D dragon
+GET B
+PUT E eagle
+GET C</textarea>
+            </div>
+
+            <div class="button-group">
+                <button id="runBtn">Run Simulation</button>
+                <button id="resetBtn">Reset</button>
+            </div>
+        </div>
+
+        <div class="player-controls" id="playerBar" style="display: none;">
+            <button id="stepBackBtn">⏮</button>
+            <button id="playPauseBtn">⏯</button>
+            <button id="stepForwardBtn">⏭</button>
+            <div class="speed-control">
+                <label for="speedSlider">Speed:</label>
+                <input type="range" id="speedSlider" min="0.1" max="5" step="0.1" value="1">
+                <span id="speedValue">1×</span>
+            </div>
+            <div class="step-info">
+                Step <span id="currentStep">1</span> of <span id="totalSteps">1</span>
+            </div>
+        </div>
+
+        <div class="visualization" id="visualizationArea">
+            <div class="placeholder">
+                <p>Enter a trace and click "Run Simulation" to start</p>
+            </div>
+        </div>
+
+        <div class="comparison-summary" id="comparisonSummary" style="display: none;">
+            <h3>Comparison Summary</h3>
+            <table id="comparisonTable">
+                <thead>
+                    <tr>
+                        <th>Policy</th>
+                        <th>Hits</th>
+                        <th>Misses</th>
+                        <th>Hit Ratio</th>
+                        <th>Evictions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Load WASM module first -->
+    <script src="cachesim.js"></script>
+    
+    <!-- Load JavaScript fallback -->
+    <script src="cache-simulator.js"></script>
+    
+    <!-- Load main application logic -->
+    <script src="main.js"></script>
+</body>
+</html>
