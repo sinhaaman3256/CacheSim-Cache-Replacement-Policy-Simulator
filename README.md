@@ -36,9 +36,6 @@ This project is focused on **learning**: if you’re studying operating systems,
 
 ## What You’ll Learn (Policies in Plain English)
 
-- **FIFO (First-In, First-Out)**  
-  Evicts the oldest inserted item, regardless of access frequency or recency. Simple baseline behavior.
-
 - **LRU (Least Recently Used)**  
   Evicts the item that hasn't been accessed for the longest time — good for temporal locality.
 
@@ -47,6 +44,9 @@ This project is focused on **learning**: if you’re studying operating systems,
 
 - **ARC (Adaptive Replacement Cache)**  
   Balances recency and frequency with two resident lists (T1, T2) and two ghost lists (B1, B2). ARC adapts an internal parameter `p` to shift capacity toward recency or frequency as workload changes.
+
+- **FIFO (First-In, First-Out)**  
+  Evicts the oldest inserted item, regardless of access frequency or recency. Simple baseline behavior.
 
 ---
 
@@ -103,33 +103,6 @@ Interpretation:
 git clone https://github.com/sinhaaman3256/CacheSim-Cache-Replacement-Policy-Simulator.git
 cd CacheSim-Cache-Replacement-Policy-Simulator/web
 npm install
-```
-
-### 2) Ensure WASM assets are present
-
-Make sure `web/public/` contains:
-
-- `index.html`  
-- `styles.css`  
-- `main.js` (UI bootstrap that talks to `window.Module`)  
-- `cachesim.js` (Emscripten glue)  
-- `cachesim.wasm` (compiled binary)
-
-> `cachesim.js` and `cachesim.wasm` must be colocated in `web/public/` so the app can fetch the `.wasm` reliably.
-
-If you deploy on Vercel, the recommended `vercel.json` (placed in `web/`) ensures proper `.wasm` MIME headers:
-
-```json
-{
-  "headers": [
-    {
-      "source": "/(.*)\\.wasm",
-      "headers": [
-        { "key": "Content-Type", "value": "application/wasm" }
-      ]
-    }
-  ]
-}
 ```
 
 ### 3) Start dev server
